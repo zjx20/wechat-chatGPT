@@ -3,21 +3,28 @@ package handler
 import (
 	"bytes"
 	"context"
-	"github.com/google/uuid"
+	"fmt"
 	"net/http"
 	"time"
 	"unsafe"
 	"wxChatGPT/config"
 	"wxChatGPT/convert"
+	"wxChatGPT/httpcli"
 	"wxChatGPT/util"
+
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 var baseHeader = map[string]string{
-	"User-Agent":    "",
-	"Accept":        "text/event-stream",
-	"Content-Type":  "application/json",
-	"Connection":    "close",
-	"Authorization": "",
+	"User-Agent":                "",
+	"Accept":                    "text/event-stream",
+	"Content-Type":              "application/json",
+	"Connection":                "close",
+	"Authorization":             "",
+	"Referer":                   "https://chat.openai.com/chat",
+	"Origin":                    "https://chat.openai.com",
+	"x-openai-assistant-app-id": "",
 }
 
 type UserInfo struct {
@@ -47,7 +54,7 @@ func (user *UserInfo) SendMsg(ctx context.Context, authorization string, config 
 		Name:  "cf_clearance",
 		Value: config.CfClearance,
 	})
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpcli.SkipTLSVerify.Do(req)
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +66,8 @@ func (user *UserInfo) SendMsg(ctx context.Context, authorization string, config 
 	}
 	line := bytes.Split(bodyBytes, []byte("\n\n"))
 	if len(line) < 2 {
-		panic(*(*string)(unsafe.Pointer(&bodyBytes)))
+		log.Debugf("body %s", string(bodyBytes))
+		panic(fmt.Errorf("%s", *(*string)(unsafe.Pointer(&bodyBytes))))
 	}
 	endBlock := line[len(line)-3][6:]
 	res := convert.ToChatRes(endBlock)

@@ -3,11 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	m "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/sync/singleflight"
 	"io"
 	"net"
 	"net/http"
@@ -19,9 +14,16 @@ import (
 	"wxChatGPT/chatGPT"
 	"wxChatGPT/config"
 	"wxChatGPT/convert"
+	"wxChatGPT/translate"
 	"wxChatGPT/util"
 	"wxChatGPT/util/middleware"
 	"wxChatGPT/util/signature"
+
+	"github.com/go-chi/chi/v5"
+	m "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/render"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 )
 
 const wxToken = "" // 这里填微信开发平台里设置的 Token
@@ -47,6 +49,8 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recover)
 
+	r.Post("/hcfyCustom", hcfyCustom)
+
 	// ChatGPT 可用性检查
 	r.Get("/healthCheck", healthCheck)
 	// 微信接入校验
@@ -61,6 +65,34 @@ func main() {
 	log.Infof("Server listening at %s", l.Addr())
 	if err = http.Serve(l, r); err != nil {
 		log.Fatalln(err)
+	}
+}
+
+func hcfyCustom(w http.ResponseWriter, r *http.Request) {
+	req := &translate.TranslateReq{}
+	if err := render.Bind(r, req); err != nil {
+		log.Debugf("bad request: %s", err)
+		render.Status(r, http.StatusBadRequest)
+		render.PlainText(w, r, err.Error())
+		return
+	}
+	ch := make(chan *translate.TranslateResult, 1)
+	translate.Translate(req, ch)
+	select {
+	case <-r.Context().Done():
+		log.Errorf("context break, reason: %s, req: %+v", r.Context().Err(), req)
+		render.Status(r, http.StatusInternalServerError)
+		render.PlainText(w, r, r.Context().Err().Error())
+		return
+	case result := <-ch:
+		if result.Err != nil {
+			render.Status(r, http.StatusInternalServerError)
+			render.PlainText(w, r, result.Err.Error())
+			return
+		} else {
+			render.JSON(w, r, result.Resp)
+			return
+		}
 	}
 }
 

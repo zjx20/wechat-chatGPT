@@ -3,12 +3,13 @@ package config
 import (
 	"bytes"
 	"encoding/json"
-	m "github.com/go-chi/chi/v5/middleware"
-	"github.com/sirupsen/logrus"
 	"os"
 	"strings"
 	"time"
 	"wxChatGPT/util/signature"
+
+	m "github.com/go-chi/chi/v5/middleware"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -87,8 +88,11 @@ func SaveConfig(config *Config) {
 		panic(err)
 	}
 	defer configFile.Close()
-	jsonEncoder := json.NewEncoder(configFile)
-	if jsonEncoder.Encode(config) != nil {
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	if _, err := configFile.Write(data); err != nil {
 		panic(err)
 	}
 }

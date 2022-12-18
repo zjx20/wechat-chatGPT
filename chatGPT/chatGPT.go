@@ -3,14 +3,16 @@ package chatGPT
 import (
 	"context"
 	"encoding/json"
-	m "github.com/go-chi/chi/v5/middleware"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"sync"
 	"time"
 	"wxChatGPT/chatGPT/handler"
 	"wxChatGPT/config"
+	"wxChatGPT/httpcli"
 	"wxChatGPT/util"
+
+	m "github.com/go-chi/chi/v5/middleware"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -75,7 +77,7 @@ func (c *ChatGPT) updateSessionToken() {
 	})
 	session.Header.Set("User-Agent", c.config.UserAgent)
 
-	resp, err := http.DefaultClient.Do(session)
+	resp, err := httpcli.SkipTLSVerify.Do(session)
 	if err != nil {
 		panic(err)
 	}

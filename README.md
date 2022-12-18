@@ -1,3 +1,10 @@
+注：本项目借用了 WeChat-chatGPT 的程序框架，基于 ChatGPT 实现了一个划词翻译翻译源API。
+
+按照原 README 的步骤部署后，设置划词翻译：
+
+![image](https://user-images.githubusercontent.com/2639200/208285236-a01b6cff-8ceb-468e-b0ea-70073982d36a.png)
+
+
 ## WeChat-chatGPT
 
 具有微信公众号被动回复用户消息功能的 ChatGPTBot 实现
@@ -5,7 +12,7 @@
 ### 食用指南
 
 1. 编译项目，注意在编译时将 `$(Token)` 替换为你的微信公众号 Token
-2. 通过 [关于如何在服务器上获取 `cf_clearance`](#关于如何在服务器上获取-cfclearance) 获取 config.json
+2. 通过 [关于如何在服务器上获取 `cf_clearance`](#关于如何在服务器上获取-cf_clearance) 获取 config.json
 3. 在 config.json 文件中填入`chat.openai.com` 里 Cookie 中的 __Secure-next-auth.session-token
 4. 部署到服务器中 默认监听本机 127.0.0.1:7458, 请自行通过 Nginx 或 Caddy 等反向代理工具进行转发
 5. 在微信公众平台中设置服务器地址为你的反向代理地址或域名地址，与微信公众号绑定的路由为 `/weChatGPT`
